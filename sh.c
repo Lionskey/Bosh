@@ -57,7 +57,7 @@ void execArgs(char** parsed)
         return;
     } else if (pid == 0) {
         if (execvp(parsed[0], parsed) < 0) {
-            printf("\nCould not execute command..");
+            printf("\nError: %s is not a valid command\n", parsed[0]);
         }
         exit(0);
     } else {
