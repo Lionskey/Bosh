@@ -12,12 +12,34 @@
   
 // Clearing the shell using escape sequences
 #define clear() printf("\033[H\033[J")
-  
+
+
 char cwd[1024];
+
+// Function to print Current Directory.
+void printDir()
+{
+    getcwd(cwd, sizeof(cwd));
+    printf("%s$", cwd);
+}
+ 
+// sigint handler
+void int_handler(int status) {
+    printf("\n"); // Move to a new line
+    char* username = getenv("USER");
+    printf("\n%s@:", username);
+    printDir();
+    
+    rl_replace_line("", 0); // Clear the previous text
+    rl_redisplay();
+}
+
+
 // Greeting shell during startup
 void init_shell()
 {
     setenv("SHELL", "/bin/bosh", 1);
+
     printf("\nWelcome to Bosh, a minimal bash-like shell.\n");
     char* username = getenv("USER");
     printf("\nlogged in as: %s", username);
@@ -29,7 +51,7 @@ int takeInput(char* str)
 {
     char* buf;
   
-    buf = readline("$ ");
+    buf = readline(" ");
     if (strlen(buf) != 0) {
         add_history(buf);
         strcpy(str, buf);
@@ -37,13 +59,6 @@ int takeInput(char* str)
     } else {
         return 1;
     }
-}
-  
-// Function to print Current Directory.
-void printDir()
-{
-    getcwd(cwd, sizeof(cwd));
-    printf("%s", cwd);
 }
   
 // Function where the system command is executed
@@ -138,7 +153,7 @@ void openHelp()
 // Function to execute builtin commands
 int ownCmdHandler(char** parsed)
 {
-    int NoOfOwnCmds = 4, i, switchOwnArg = 0;
+    int NoOfOwnCmds = 3, i, switchOwnArg = 0;
     char* ListOfOwnCmds[NoOfOwnCmds];
     char* username;
   
@@ -243,6 +258,10 @@ int main()
     char* parsedArgsPiped[MAXLIST];
     int execFlag = 0;
     init_shell();
+
+    if(signal(SIGINT, int_handler) == SIG_ERR){
+    	printf("failed to register interrupts with kernel\n");
+    }
   
     while (1) {
         // print shell line
