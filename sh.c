@@ -144,7 +144,7 @@ int ownCmdHandler(char** parsed)
     ListOfOwnCmds[0] = "exit";
     ListOfOwnCmds[1] = "cd";
     ListOfOwnCmds[2] = "help";
-  
+
     for (i = 0; i < NoOfOwnCmds; i++) {
         if (strcmp(parsed[0], ListOfOwnCmds[i]) == 0) {
             switchOwnArg = i + 1;
@@ -197,6 +197,17 @@ void parseSpace(char* str, char** parsed)
             break;
         if (strlen(parsed[i]) == 0)
             i--;
+    }
+
+    // For loop for expanding env variables
+    char* envvar;
+    for(i = 0; i < MAXLIST; i++){
+	if(parsed[i] == NULL)
+	    break;
+    	if(parsed[i][0] == '$'){
+	    memmove(&parsed[i][0], &parsed[i][0+1], strlen(parsed[i]) - 0);
+	    parsed[i] = getenv(parsed[i]);
+	}
     }
 }
   
