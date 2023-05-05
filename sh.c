@@ -13,6 +13,7 @@
 // Clearing the shell using escape sequences
 #define clear() printf("\033[H\033[J")
   
+char cwd[1024];
 // Greeting shell during startup
 void init_shell()
 {
@@ -41,7 +42,6 @@ int takeInput(char* str)
 // Function to print Current Directory.
 void printDir()
 {
-    char cwd[1024];
     getcwd(cwd, sizeof(cwd));
     printf("%s", cwd);
 }
@@ -158,10 +158,8 @@ int ownCmdHandler(char** parsed)
         exit(0);
     case 2:
         chdir(parsed[1]);
-//	char* cwd = malloc(1024);
-//	getcwd(cwd, sizeof(cwd));
-//	setenv("PWD", cwd, 1);
-//	free(cwd);
+	getcwd(cwd, sizeof(cwd));
+	setenv("PWD", cwd, 1);
         return 1;
     case 3:
         openHelp();
