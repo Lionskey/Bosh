@@ -16,6 +16,7 @@
 // Greeting shell during startup
 void init_shell()
 {
+    setenv("SHELL", "/bin/bosh", 1);
     printf("\nWelcome to Bosh, a minimal bash-like shell.\n");
     char* username = getenv("USER");
     printf("\nlogged in as: %s", username);
@@ -157,6 +158,10 @@ int ownCmdHandler(char** parsed)
         exit(0);
     case 2:
         chdir(parsed[1]);
+//	char* cwd = malloc(1024);
+//	getcwd(cwd, sizeof(cwd));
+//	setenv("PWD", cwd, 1);
+//	free(cwd);
         return 1;
     case 3:
         openHelp();
@@ -205,10 +210,10 @@ void parseSpace(char* str, char** parsed)
 	if(parsed[i] == NULL)
 	    break;
     	if(parsed[i][0] == '$'){
-	    memmove(&parsed[i][0], &parsed[i][0+1], strlen(parsed[i]) - 0);
-	    parsed[i] = getenv(parsed[i]);
+	    parsed[i] = getenv(parsed[i]+1);
 	}
     }
+    
 }
   
 int processString(char* str, char** parsed, char** parsedpipe)
