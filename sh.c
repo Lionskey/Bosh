@@ -16,10 +16,10 @@
 // Greeting shell during startup
 void init_shell()
 {
+    printf("\nWelcome to Bosh, a minimal bash-like shell.\n");
     char* username = getenv("USER");
     printf("\nlogged in as: %s", username);
     printf("\n");
-    sleep(1);
 }
   
 // Function to take input
@@ -27,7 +27,7 @@ int takeInput(char* str)
 {
     char* buf;
   
-    buf = readline(":$ ");
+    buf = readline("$ ");
     if (strlen(buf) != 0) {
         add_history(buf);
         strcpy(str, buf);
@@ -42,7 +42,7 @@ void printDir()
 {
     char cwd[1024];
     getcwd(cwd, sizeof(cwd));
-    printf("\n%s", cwd);
+    printf("%s", cwd);
 }
   
 // Function where the system command is executed
@@ -74,12 +74,12 @@ void execArgsPiped(char** parsed, char** parsedpipe)
     pid_t p1, p2;
   
     if (pipe(pipefd) < 0) {
-        printf("\nPipe could not be initialized");
+        printf("\nPipe could not be initialized\n");
         return;
     }
     p1 = fork();
     if (p1 < 0) {
-        printf("\nCould not fork");
+        printf("\nCould not fork\n");
         return;
     }
   
@@ -91,7 +91,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
         close(pipefd[1]);
   
         if (execvp(parsed[0], parsed) < 0) {
-            printf("\nCould not execute command 1..");
+            printf("\nCould not execute command 1..\n");
             exit(0);
         }
     } else {
@@ -99,7 +99,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
         p2 = fork();
   
         if (p2 < 0) {
-            printf("\nCould not fork");
+            printf("\nCould not fork\n");
             return;
         }
   
@@ -110,7 +110,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
             dup2(pipefd[0], STDIN_FILENO);
             close(pipefd[0]);
             if (execvp(parsedpipe[0], parsedpipe) < 0) {
-                printf("\nCould not execute command 2..");
+                printf("\nCould not execute command 2..\n");
                 exit(0);
             }
         } else {
@@ -168,7 +168,7 @@ int ownCmdHandler(char** parsed)
     return 0;
 }
   
-// function for finding pipe
+// This function finds the pipe
 int parsePipe(char* str, char** strpiped)
 {
     int i;
@@ -232,6 +232,9 @@ int main()
   
     while (1) {
         // print shell line
+	
+    	char* username = getenv("USER");
+	printf("\n%s@:", username);
         printDir();
         // take input
         if (takeInput(inputString))
