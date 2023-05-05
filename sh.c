@@ -26,12 +26,9 @@ void printDir()
 // sigint handler
 void int_handler(int status) {
     printf("\n"); // Move to a new line
-    char* username = getenv("USER");
-    printf("\n%s@:", username);
-    printDir();
-    
+    rl_on_new_line(); // Regenerate the prompt on a newline	
     rl_replace_line("", 0); // Clear the previous text
-    rl_redisplay();
+    rl_redisplay(); // redisplay readline prompt
 }
 
 
@@ -42,7 +39,7 @@ void init_shell()
 
     printf("\nWelcome to Bosh, a minimal bash-like shell.\n");
     char* username = getenv("USER");
-    printf("\nlogged in as: %s", username);
+    printf("\nlogged in as: %s\n", username);
     printf("\n");
 }
   
@@ -50,8 +47,14 @@ void init_shell()
 int takeInput(char* str)
 {
     char* buf;
-  
-    buf = readline(" ");
+    getcwd(cwd, sizeof(cwd)); // construct working directory variable for readline prompt
+    char* username = getenv("USER"); // construct username variable for readline prompt
+    int promptSize = 2048; 
+    char prompt[promptSize];
+
+    snprintf(prompt, promptSize, "%s@:%s$ ", username, cwd);
+	
+    buf = readline(prompt);
     if (strlen(buf) != 0) {
         add_history(buf);
         strcpy(str, buf);
@@ -264,11 +267,6 @@ int main()
     }
   
     while (1) {
-        // print shell line
-	
-    	char* username = getenv("USER");
-	printf("\n%s@:", username);
-        printDir();
         // take input
         if (takeInput(inputString))
             continue;
