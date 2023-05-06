@@ -1,6 +1,6 @@
 # Bosh
 
-Welcome to the Bosh project! A minimal Bash-like shell that is accepting contributions!
+Welcome to the Bosh project! A minimal Bash-like shell for GNU/Linux operating systems that is accepting contributions!
 
 ## Feature set
 1. SIGINT handling
