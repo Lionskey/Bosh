@@ -16,13 +16,6 @@
 
 char cwd[1024];
 
-// Function to print Current Directory.
-void printDir()
-{
-    getcwd(cwd, sizeof(cwd));
-    printf("%s$", cwd);
-}
- 
 // sigint handler
 void int_handler(int status) {
     printf("\n"); // Move to a new line
@@ -32,18 +25,16 @@ void int_handler(int status) {
 }
 
 
-// Greeting shell during startup
+// Greeting message during startup + other necessary env changes
 void init_shell()
 {
     setenv("SHELL", "/bin/bosh", 1);
 
     printf("\nWelcome to Bosh, a minimal bash-like shell.\n");
-    char* username = getenv("USER");
-    printf("\nlogged in as: %s\n", username);
     printf("\n");
 }
   
-// Function to take input
+// Function to take input + display prompt
 int takeInput(char* str)
 {
     char* buf;
@@ -151,7 +142,7 @@ void openHelp()
     return;
 }
   
-// Function to execute builtin commands
+// Function to execute bosh builtin commands
 int ownCmdHandler(char** parsed)
 {
     int NoOfOwnCmds = 3, i, switchOwnArg = 0;
