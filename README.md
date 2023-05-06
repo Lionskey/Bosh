@@ -19,16 +19,24 @@ And much more to come, such as redirection!
 ## Installation instructions
 1. Git clone the repo
 
-```git clone https://github.com/Lionskey/Bosh```
+```
+user@linux:~$ git clone https://github.com/Lionskey/Bosh
+```
 
 2. Change directory to Bosh source tree
 
-```cd Bosh```
+```
+user@linux:~$ cd Bosh
+```
 
 3. Use make to invoke the makefile for compilation and installation
 
-```make && sudo make install```
+```
+user@linux:~$ make && sudo make install
+```
 
 4. Call the bosh binary from path
 
-```bosh```
+```
+user@linux:~$ bosh
+```
