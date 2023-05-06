@@ -18,10 +18,12 @@ char cwd[1024];
 
 // sigint handler
 void int_handler(int status) {
-    printf("\n"); // Move to a new line
-    rl_on_new_line(); // Regenerate the prompt on a newline	
-    rl_replace_line("", 0); // Clear the previous text
-    rl_redisplay(); // redisplay readline prompt
+    rl_clear_signals();
+    rl_reset_line_state();      // Resets the display state to a clean state
+    rl_cleanup_after_signal();  // Resets the terminal to the state before readline() was called
+    rl_replace_line("",0);      // Clears the current prompt
+    rl_crlf();                  // Moves the cursor to the next line
+    rl_redisplay();             // Redisplays the prompt
 }
 
 
@@ -29,7 +31,6 @@ void int_handler(int status) {
 void init_shell()
 {
     setenv("SHELL", "/bin/bosh", 1);
-
     printf("\nWelcome to Bosh, a minimal bash-like shell.\n");
     printf("\n");
 }
@@ -71,7 +72,9 @@ void execArgs(char** parsed)
         exit(0);
     } else {
         // waiting for child to terminate
+	signal(SIGINT, SIG_IGN);
         wait(NULL); 
+	signal(SIGINT, int_handler);
         return;
     }
 }
@@ -250,13 +253,15 @@ int main()
     char* parsedArgsPiped[MAXLIST];
     int execFlag = 0;
     init_shell();
-
+    signal(SIGINT, SIG_IGN);
+    wait(NULL);
     if(signal(SIGINT, int_handler) == SIG_ERR){
     	printf("failed to register interrupts with kernel\n");
     }
   
     while (1) {
-        // take input
+
+	// take input + prompt	
         if (takeInput(inputString))
             continue;
         // process
