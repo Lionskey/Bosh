@@ -145,8 +145,6 @@ void openHelp()
 {
     puts("\n--- Welcome to BOSH, the Barebones Operating-system SHell ---"
          "\n A minimal and simple shell that is accepting contributions. "
-         "\n  Bosh uses the readline library but unfortunately doesn't   "
-         "\n            have the feature set of Bash. Enjoy!             "      
          "\n"
 	);
   
