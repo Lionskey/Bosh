@@ -78,7 +78,30 @@ void execArgs(char** parsed)
         return;
     }
 }
-  
+ 
+void execArgsRedir(char** parsed, char** parsedredir)
+{
+    pid_t p1;
+
+    p1 = fork();
+    if (p1 < 0){
+        printf("\nCould not fork\n");
+	return;
+    }
+
+    if(p1 == 0) {
+	freopen(parsedredir[0], "w", stdout) ;
+        if (execvp(parsed[0], parsed) < 0) {
+            printf("\nCould not execute command ..\n");
+	    freopen("/dev/tty", "w", stdout);
+            exit(0);
+        }
+	freopen("/dev/tty", "w", stdout);
+    } 
+    else
+        wait(NULL);
+}
+
 // Function where the piped system commands is executed
 void execArgsPiped(char** parsed, char** parsedpipe)
 {
@@ -180,7 +203,24 @@ int ownCmdHandler(char** parsed)
   
     return 0;
 }
-  
+
+// Function to find redirection operator
+int parseRedirect(char* str, char** strredir)
+{
+    int i;
+    for(i = 0; i < 2; i++){
+        strredir[i] = strsep(&str, ">");
+	if(strredir[i] == NULL)
+	    break;
+    }
+
+    if (strredir[1] == NULL)
+        return 0;
+    else {
+        return 1;
+    }
+}
+
 // This function finds the pipe
 int parsePipe(char* str, char** strpiped)
 {
@@ -224,33 +264,49 @@ void parseSpace(char* str, char** parsed)
     
 }
   
-int processString(char* str, char** parsed, char** parsedpipe)
+int processString(char* str, char** parsed, char** parsedpipe, char** parsedredir)
 {
   
     char* strpiped[2];
+    char* strredir[2];
     int piped = 0;
+    int redirected = 0;
   
     piped = parsePipe(str, strpiped);
+    redirected = parseRedirect(str, strredir);
   
     if (piped) {
         parseSpace(strpiped[0], parsed);
         parseSpace(strpiped[1], parsedpipe);
-  
-    } else {
+    } 
+    if(redirected) {
+	parseSpace(strredir[0], parsed);
+        parseSpace(strredir[1], parsedredir);
+    } 
+    else {
   
         parseSpace(str, parsed);
     }
   
     if (ownCmdHandler(parsed))
         return 0;
-    else
-        return 1 + piped;
+    else {
+	if(piped)
+            return 2;
+	else if(redirected)
+	    return 3;
+	else
+	    return 1;
+    }
 }
+
+
   
 int main()
 {
     char inputString[MAXCOM], *parsedArgs[MAXLIST];
     char* parsedArgsPiped[MAXLIST];
+    char* parsedArgsRedir[MAXLIST];
     int execFlag = 0;
     init_shell();
     signal(SIGINT, SIG_IGN);
@@ -266,7 +322,7 @@ int main()
             continue;
         // process
         execFlag = processString(inputString,
-        parsedArgs, parsedArgsPiped);
+        parsedArgs, parsedArgsPiped, parsedArgsRedir);
         // execflag returns zero if there is no command
         // or it is a builtin command,
         // 1 if it is a simple command
@@ -278,6 +334,9 @@ int main()
   
         if (execFlag == 2)
             execArgsPiped(parsedArgs, parsedArgsPiped);
+
+	if (execFlag == 3)
+	    execArgsRedir(parsedArgs, parsedArgsRedir);
     }
     return 0;
 }
