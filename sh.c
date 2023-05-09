@@ -34,6 +34,7 @@ void init_shell()
     setenv("SHELL", "/bin/bosh", 1);
     printf("\nWelcome to Bosh, a minimal bash-like shell.\n");
     printf("\n");
+    read_history(".bosh_history");
 }
   
 // Function to take input + display prompt
@@ -50,6 +51,7 @@ int takeInput(char* str)
     buf = readline(prompt);
     if (strlen(buf) != 0) {
         add_history(buf);
+	write_history(".bosh_history");
         strcpy(str, buf);
         return 0;
     } else {
@@ -68,7 +70,7 @@ void execArgs(char** parsed)
         return;
     } else if (pid == 0) {
         if (execvp(parsed[0], parsed) < 0) {
-            printf("\nError: %s is not a valid command\n", parsed[0]);
+            printf("\nError: %s is not a valid command\n\n", parsed[0]);
         }
         exit(0);
     } else {
@@ -79,7 +81,10 @@ void execArgs(char** parsed)
         return;
     }
 }
- 
+
+// Function that reads what type of redirection is being used (indicated by the redirtype variable) 
+// and uses freopen() to open a file with the appropriate redirection operation
+// When execvp executes the parsed command the stdout with be redirected to the file.
 void execArgsRedir(char** parsed, char** parsedredir)
 {
     pid_t p1;
@@ -90,8 +95,12 @@ void execArgsRedir(char** parsed, char** parsedredir)
 	return;
     }
     if(p1 == 0) {	
+	
+	// When redirtype == 0, the truncating redirection operator is used. (>)
+	// When redirtype == 1, the appending redirection operator is used. (>>)
+
 	if(redirtype == 0){
-	    freopen(parsedredir[0], "w", stdout) ;
+	    freopen(parsedredir[0], "w", stdout); 
             if (execvp(parsed[0], parsed) < 0) {
                 printf("\nCould not execute command ..\n");
 	        freopen("/dev/tty", "w", stdout);
@@ -216,40 +225,35 @@ int ownCmdHandler(char** parsed)
     return 0;
 }
 
-// Function to find redirection operator
+// Function to find redirection operator.
+// This function uses strstr() to locate the first instance of the redirection operator.
+// Then the function inserts a null byte character '\0' into the string, effectively splitting the string in two
+//
+//
 int parseRedirect(char* str, char** strredir)
 {
     char* redirfinder = strstr(str, ">>");
     if(redirfinder != NULL){
 	redirfinder[0] = '\0';
-	redirfinder += 2;
+	redirfinder += 2; //iterates the pointer to the character by two to store the split string without '>>' into strredir[1]
 	redirtype = 1;
 	strredir[0] = str;
 	strredir[1] = redirfinder;
-	/*
-	for(int i = 0; i < 2; i++){
-            strredir[i] = strsep(&str, ">>");
-	    if(strredir[i] == NULL)
-	        break;
-        }*/
-
         return 1;
 
     }
     else if(redirfinder == NULL){
-	redirtype = 0;
-        for(int i = 0; i < 2; i++){
-            strredir[i] = strsep(&str, ">");
-	    if(strredir[i] == NULL)
-	        break;
-        }
-
-        if (strredir[1] == NULL)
-            return 0;
-        else {
-            return 1;
-        }
+	redirfinder = strstr(str, ">");
+	if(redirfinder != NULL){
+	    redirfinder[0] = '\0';
+	    redirfinder += 1;
+	    redirtype = 0;
+	    strredir[0] = str;
+	    strredir[1] = redirfinder;
+	    return 1;
+	}
     }
+    return 0; // if no redirection operator is found, return zero
 }
 
 // This function finds the pipe
@@ -319,7 +323,7 @@ int processString(char* str, char** parsed, char** parsedpipe, char** parsedredi
         parseSpace(str, parsed);
     }
   
-    if (ownCmdHandler(parsed))
+    if (ownCmdHandler(parsed)) //Tests if the parsed command is a shell built in
         return 0;
     else {
 	if(piped)
@@ -340,6 +344,8 @@ int main()
     char* parsedArgsRedir[MAXLIST];
     int execFlag = 0;
     init_shell();
+
+    // Spawns signal handler to prevent sigints
     signal(SIGINT, SIG_IGN);
     wait(NULL);
     if(signal(SIGINT, int_handler) == SIG_ERR){
@@ -358,6 +364,7 @@ int main()
         // or it is a builtin command,
         // 1 if it is a simple command
         // 2 if it is including a pipe.
+	// 3 if it is including a redirection operator
   
         // execute
         if (execFlag == 1)
