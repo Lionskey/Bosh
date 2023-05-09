@@ -15,6 +15,7 @@
 
 
 char cwd[1024];
+int redirtype;
 
 // sigint handler
 void int_handler(int status) {
@@ -88,15 +89,29 @@ void execArgsRedir(char** parsed, char** parsedredir)
         printf("\nCould not fork\n");
 	return;
     }
-
-    if(p1 == 0) {
-	freopen(parsedredir[0], "w", stdout) ;
-        if (execvp(parsed[0], parsed) < 0) {
-            printf("\nCould not execute command ..\n");
+    if(p1 == 0) {	
+        printf("When executing arguments, redirtype is now %i\n", redirtype); 
+	if(redirtype == 0){
+	    freopen(parsedredir[0], "w", stdout) ;
+            if (execvp(parsed[0], parsed) < 0) {
+                printf("\nCould not execute command ..\n");
+	        freopen("/dev/tty", "w", stdout);
+                exit(0);
+            }
 	    freopen("/dev/tty", "w", stdout);
-            exit(0);
-        }
-	freopen("/dev/tty", "w", stdout);
+	}
+	else if(redirtype == 1){
+	    printf("redirtype == 1 actually executed\n");
+	    printf("it is %s\n", parsedredir[0]);
+	    freopen(parsedredir[0], "a", stdout);
+	    if (execvp(parsed[0], parsed) < 0) {
+                printf("\nCould not execute command ..\n");
+	        freopen("/dev/tty", "w", stdout);
+		exit(0);
+	    }
+	    freopen("/dev/tty", "w", stdout);
+	}
+	
     } 
     else
         wait(NULL);
@@ -207,17 +222,39 @@ int ownCmdHandler(char** parsed)
 // Function to find redirection operator
 int parseRedirect(char* str, char** strredir)
 {
-    int i;
-    for(i = 0; i < 2; i++){
-        strredir[i] = strsep(&str, ">");
-	if(strredir[i] == NULL)
-	    break;
-    }
+    char* redirfinder = strstr(str, ">>");
+    if(redirfinder != NULL){
+	printf("redirtype set to 1\n");
+	redirfinder[0] = '\0';
+	redirfinder += 2;
+	printf("str is %s; redirfinder is %s\n", str, redirfinder);
+	redirtype = 1;
+	strredir[0] = str;
+	strredir[1] = redirfinder;
+	/*
+	for(int i = 0; i < 2; i++){
+            strredir[i] = strsep(&str, ">>");
+	    if(strredir[i] == NULL)
+	        break;
+        }*/
 
-    if (strredir[1] == NULL)
-        return 0;
-    else {
         return 1;
+
+    }
+    else if(redirfinder == NULL){
+	printf("redirtype set to 0\n");
+	redirtype = 0;
+        for(int i = 0; i < 2; i++){
+            strredir[i] = strsep(&str, ">");
+	    if(strredir[i] == NULL)
+	        break;
+        }
+
+        if (strredir[1] == NULL)
+            return 0;
+        else {
+            return 1;
+        }
     }
 }
 
@@ -329,14 +366,15 @@ int main()
         // 2 if it is including a pipe.
   
         // execute
+	printf("execflag is %i\n", execFlag);
         if (execFlag == 1)
             execArgs(parsedArgs);
   
-        if (execFlag == 2){
+	else if (execFlag == 2){
 	    execArgsPiped(parsedArgs, parsedArgsPiped);
 	}
 
-	if (execFlag == 3)
+	else if (execFlag == 3)
 	    execArgsRedir(parsedArgs, parsedArgsRedir);
     }
     return 0;
