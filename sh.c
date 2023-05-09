@@ -90,7 +90,6 @@ void execArgsRedir(char** parsed, char** parsedredir)
 	return;
     }
     if(p1 == 0) {	
-        printf("When executing arguments, redirtype is now %i\n", redirtype); 
 	if(redirtype == 0){
 	    freopen(parsedredir[0], "w", stdout) ;
             if (execvp(parsed[0], parsed) < 0) {
@@ -101,8 +100,6 @@ void execArgsRedir(char** parsed, char** parsedredir)
 	    freopen("/dev/tty", "w", stdout);
 	}
 	else if(redirtype == 1){
-	    printf("redirtype == 1 actually executed\n");
-	    printf("it is %s\n", parsedredir[0]);
 	    freopen(parsedredir[0], "a", stdout);
 	    if (execvp(parsed[0], parsed) < 0) {
                 printf("\nCould not execute command ..\n");
@@ -224,10 +221,8 @@ int parseRedirect(char* str, char** strredir)
 {
     char* redirfinder = strstr(str, ">>");
     if(redirfinder != NULL){
-	printf("redirtype set to 1\n");
 	redirfinder[0] = '\0';
 	redirfinder += 2;
-	printf("str is %s; redirfinder is %s\n", str, redirfinder);
 	redirtype = 1;
 	strredir[0] = str;
 	strredir[1] = redirfinder;
@@ -242,7 +237,6 @@ int parseRedirect(char* str, char** strredir)
 
     }
     else if(redirfinder == NULL){
-	printf("redirtype set to 0\n");
 	redirtype = 0;
         for(int i = 0; i < 2; i++){
             strredir[i] = strsep(&str, ">");
@@ -366,7 +360,6 @@ int main()
         // 2 if it is including a pipe.
   
         // execute
-	printf("execflag is %i\n", execFlag);
         if (execFlag == 1)
             execArgs(parsedArgs);
   
