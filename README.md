@@ -4,12 +4,12 @@ Welcome to the Bosh project! A minimal Bash-like shell for GNU/Linux operating s
 
 ## Feature set
 1. SIGINT handling
-2. Command pipes
+2. Command pipes (|)
 3. Whitespace parsing
-4. History
+4. Command history
 5. Tab completion
-
-And much more to come, such as redirection!
+6. Truncating redirection operations (>)
+7. Appending redirection operations (>>)
 
 ## Dependencies
 1. libreadline (GNU C readline library)
