@@ -279,7 +279,7 @@ int processString(char* str, char** parsed, char** parsedpipe, char** parsedredi
         parseSpace(strpiped[0], parsed);
         parseSpace(strpiped[1], parsedpipe);
     } 
-    if(redirected) {
+    else if(redirected) {
 	parseSpace(strredir[0], parsed);
         parseSpace(strredir[1], parsedredir);
     } 
@@ -332,8 +332,9 @@ int main()
         if (execFlag == 1)
             execArgs(parsedArgs);
   
-        if (execFlag == 2)
-            execArgsPiped(parsedArgs, parsedArgsPiped);
+        if (execFlag == 2){
+	    execArgsPiped(parsedArgs, parsedArgsPiped);
+	}
 
 	if (execFlag == 3)
 	    execArgsRedir(parsedArgs, parsedArgsRedir);
