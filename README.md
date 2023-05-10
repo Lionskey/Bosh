@@ -2,6 +2,8 @@
 
 Welcome to the Bosh project! A minimal Bash-like shell for GNU/Linux operating systems that is accepting contributions!
 
+![Bosh](https://github.com/Lionskey/Bosh/assets/55106700/d213b45c-7b6c-4e94-aef2-e71e73ccfb28)
+
 ## Feature set
 1. SIGINT handling
 2. Command pipes (|)
