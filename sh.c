@@ -28,12 +28,10 @@ void int_handler(int status) {
 }
 
 
-// Greeting message during startup + other necessary env changes
+// necessary env and history function calls
 void init_shell()
 {
     setenv("SHELL", "/bin/bosh", 1);
-    printf("\nWelcome to Bosh, a minimal bash-like shell.\n");
-    printf("\n");
     read_history(".bosh_history");
 }
   
@@ -45,9 +43,12 @@ int takeInput(char* str)
     char* username = getenv("USER"); // construct username variable for readline prompt
     int promptSize = 2048; 
     char prompt[promptSize];
+    
+    if(strcmp(username, "root") == 0)
+        snprintf(prompt, promptSize, "%s@:%s# ", username, cwd);
+    else
+        snprintf(prompt, promptSize, "%s@:%s$ ", username, cwd);
 
-    snprintf(prompt, promptSize, "%s@:%s$ ", username, cwd);
-	
     buf = readline(prompt);
     if (strlen(buf) != 0) {
         add_history(buf);
@@ -228,8 +229,7 @@ int ownCmdHandler(char** parsed)
 // Function to find redirection operator.
 // This function uses strstr() to locate the first instance of the redirection operator.
 // Then the function inserts a null byte character '\0' into the string, effectively splitting the string in two
-//
-//
+
 int parseRedirect(char* str, char** strredir)
 {
     char* redirfinder = strstr(str, ">>");
@@ -334,8 +334,6 @@ int processString(char* str, char** parsed, char** parsedpipe, char** parsedredi
 	    return 1;
     }
 }
-
-
   
 int main()
 {
