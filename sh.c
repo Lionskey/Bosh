@@ -6,7 +6,9 @@
 #include<sys/wait.h>
 #include<readline/readline.h>
 #include<readline/history.h>
-  
+#include<errno.h>
+#include<fcntl.h>
+
 #define MAXCOM 1000 // max number of letters to be supported
 #define MAXLIST 100 // max number of commands to be supported
   
@@ -16,6 +18,7 @@
 
 char cwd[1024];
 int redirtype;
+int prompttype;
 
 // sigint handler
 void int_handler(int status) {
@@ -34,6 +37,20 @@ void init_shell()
     setenv("SHELL", "/bin/bosh", 1);
     read_history(".bosh_history");
 }
+
+void doExec(char **parsed)
+{
+    if(parsed[1] != NULL){
+        execvp(parsed[1], parsed + 1);
+	switch (errno) {
+	    case EACCES: fprintf(stderr, "Error: permission denied\n");
+	        break;
+	    case ENOENT: fprintf(stderr, "Error: file does not exist\n");
+                break;
+	    default:     fprintf(stderr, "Error: unable to exec\n");
+	}
+    }
+}
   
 // Function to take input + display prompt
 int takeInput(char* str)
@@ -48,8 +65,10 @@ int takeInput(char* str)
         snprintf(prompt, promptSize, "%s@:%s# ", username, cwd);
     else
         snprintf(prompt, promptSize, "%s@:%s$ ", username, cwd);
-
-    buf = readline(prompt);
+    if(prompttype)
+    	buf = readline("");
+    else
+    	buf = readline(prompt);
     if (strlen(buf) != 0) {
         add_history(buf);
 	write_history(".bosh_history");
@@ -67,11 +86,11 @@ void execArgs(char** parsed)
     pid_t pid = fork(); 
   
     if (pid == -1) {
-        printf("\nFailed forking child..");
+        printf("Failed forking child..\n");
         return;
     } else if (pid == 0) {
         if (execvp(parsed[0], parsed) < 0) {
-            printf("\nError: %s is not a valid command\n\n", parsed[0]);
+            printf("Error: %s is not a valid command\n", parsed[0]);
         }
         exit(0);
     } else {
@@ -92,7 +111,7 @@ void execArgsRedir(char** parsed, char** parsedredir)
 
     p1 = fork();
     if (p1 < 0){
-        printf("\nCould not fork\n");
+        printf("Could not fork\n");
 	return;
     }
     if(p1 == 0) {	
@@ -103,8 +122,8 @@ void execArgsRedir(char** parsed, char** parsedredir)
 	if(redirtype == 0){
 	    freopen(parsedredir[0], "w", stdout); 
             if (execvp(parsed[0], parsed) < 0) {
-                printf("\nCould not execute command ..\n");
-	        freopen("/dev/tty", "w", stdout);
+                printf("Could not execute command ..\n");
+		freopen("/dev/tty", "w", stdout);
                 exit(0);
             }
 	    freopen("/dev/tty", "w", stdout);
@@ -112,8 +131,8 @@ void execArgsRedir(char** parsed, char** parsedredir)
 	else if(redirtype == 1){
 	    freopen(parsedredir[0], "a", stdout);
 	    if (execvp(parsed[0], parsed) < 0) {
-                printf("\nCould not execute command ..\n");
-	        freopen("/dev/tty", "w", stdout);
+                printf("Could not execute command ..\n");
+		freopen("/dev/tty", "w", stdout);
 		exit(0);
 	    }
 	    freopen("/dev/tty", "w", stdout);
@@ -132,12 +151,12 @@ void execArgsPiped(char** parsed, char** parsedpipe)
     pid_t p1, p2;
   
     if (pipe(pipefd) < 0) {
-        printf("\nPipe could not be initialized\n");
+        printf("Pipe could not be initialized\n");
         return;
     }
     p1 = fork();
     if (p1 < 0) {
-        printf("\nCould not fork\n");
+        printf("Could not fork\n");
         return;
     }
   
@@ -149,7 +168,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
         close(pipefd[1]);
   
         if (execvp(parsed[0], parsed) < 0) {
-            printf("\nCould not execute command 1..\n");
+            printf("Could not execute command 1..\n");
             exit(0);
         }
     } else {
@@ -157,7 +176,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
         p2 = fork();
   
         if (p2 < 0) {
-            printf("\nCould not fork\n");
+            printf("Could not fork\n");
             return;
         }
   
@@ -168,7 +187,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
             dup2(pipefd[0], STDIN_FILENO);
             close(pipefd[0]);
             if (execvp(parsedpipe[0], parsedpipe) < 0) {
-                printf("\nCould not execute command 2..\n");
+                printf("Could not execute command 2..\n");
                 exit(0);
             }
         } else {
@@ -189,17 +208,18 @@ void openHelp()
   
     return;
 }
-  
+
 // Function to execute bosh builtin commands
 int ownCmdHandler(char** parsed)
 {
-    int NoOfOwnCmds = 3, i, switchOwnArg = 0;
+    int NoOfOwnCmds = 4, i, switchOwnArg = 0;
     char* ListOfOwnCmds[NoOfOwnCmds];
     char* username;
   
     ListOfOwnCmds[0] = "exit";
     ListOfOwnCmds[1] = "cd";
     ListOfOwnCmds[2] = "help";
+    ListOfOwnCmds[3] = "exec";
 
     for (i = 0; i < NoOfOwnCmds; i++) {
         if (strcmp(parsed[0], ListOfOwnCmds[i]) == 0) {
@@ -219,6 +239,9 @@ int ownCmdHandler(char** parsed)
     case 3:
         openHelp();
         return 1;
+    case 4:
+	doExec(parsed);
+	return 1;
     default:
         break;
     }
@@ -292,10 +315,11 @@ void parseSpace(char* str, char** parsed)
     for(i = 0; i < MAXLIST; i++){
 	if(parsed[i] == NULL)
 	    break;
-    	if(parsed[i][0] == '$'){
+	if(parsed[i][0] == '$'){
 	    parsed[i] = getenv(parsed[i]+1);
 	}
     }
+
     
 }
   
@@ -335,26 +359,48 @@ int processString(char* str, char** parsed, char** parsedpipe, char** parsedredi
     }
 }
   
-int main()
+int main(int argc, char** argv)
 {
+
     char inputString[MAXCOM], *parsedArgs[MAXLIST];
     char* parsedArgsPiped[MAXLIST];
     char* parsedArgsRedir[MAXLIST];
     int execFlag = 0;
+    FILE* fp;
+
+
     init_shell();
 
     // Spawns signal handler to prevent sigints
     signal(SIGINT, SIG_IGN);
     wait(NULL);
     if(signal(SIGINT, int_handler) == SIG_ERR){
-    	printf("failed to register interrupts with kernel\n");
+	printf("failed to register interrupts with kernel\n");
     }
-  
+
+    if(argc > 1 && argv[1] != NULL){
+    
+	prompttype = 1;
+        fp = fopen(argv[1], "r");
+	if (fp == NULL)
+            exit(EXIT_FAILURE);	
+	
+    } 
+
     while (1) {
 
 	// take input + prompt	
-        if (takeInput(inputString))
-            continue;
+	if(prompttype == 0)
+            if (takeInput(inputString))
+                continue;
+	
+	if(prompttype == 1){
+	    if(fgets(inputString, MAXCOM, fp) == NULL){
+	         exit(0);
+	    }
+	}
+	    
+
         // process
         execFlag = processString(inputString,
         parsedArgs, parsedArgsPiped, parsedArgsRedir);
