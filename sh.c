@@ -300,7 +300,13 @@ int parsePipe(char* str, char** strpiped)
 void parseSpace(char* str, char** parsed)
 {
     int i;
-  
+    char* ptr;
+
+    ptr = strchr(str, '#'); // This will delete any data after a comment symbol
+    if (ptr != NULL) {
+	*ptr = '\0';
+    }    
+
     for (i = 0; i < MAXLIST; i++) {
         parsed[i] = strsep(&str, " ");
   
@@ -401,23 +407,22 @@ int main(int argc, char** argv)
 	    inputString[strcspn(inputString, "\n")] = 0; // Remove newline from fgets()
 	}
 	    
-
-        // process
-        execFlag = processString(inputString,
-        parsedArgs, parsedArgsPiped, parsedArgsRedir);
+        if(inputString[0] != '#')
+	    execFlag = processString(inputString, parsedArgs, parsedArgsPiped, parsedArgsRedir);
+	else
+	    execFlag = 0;
         // execflag returns zero if there is no command
         // or it is a builtin command,
         // 1 if it is a simple command
         // 2 if it is including a pipe.
 	// 3 if it is including a redirection operator
   
-        // execute
-        if (execFlag == 1)
+	if (execFlag == 1)
             execArgs(parsedArgs);
   
-	else if (execFlag == 2){
+	else if (execFlag == 2)
 	    execArgsPiped(parsedArgs, parsedArgsPiped);
-	}
+	
 
 	else if (execFlag == 3)
 	    execArgsRedir(parsedArgs, parsedArgsRedir);
