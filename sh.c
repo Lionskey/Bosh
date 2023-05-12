@@ -398,6 +398,7 @@ int main(int argc, char** argv)
 	    if(fgets(inputString, MAXCOM, fp) == NULL){
 	         exit(0);
 	    }
+	    inputString[strcspn(inputString, "\n")] = 0; // Remove newline from fgets()
 	}
 	    
 
