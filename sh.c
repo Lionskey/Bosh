@@ -8,6 +8,7 @@
 #include<readline/history.h>
 #include<errno.h>
 #include<fcntl.h>
+#include<pwd.h>
 
 #define MAXCOM 1000 // max number of letters to be supported
 #define MAXLIST 100 // max number of commands to be supported
@@ -57,7 +58,15 @@ int takeInput(char* str)
 {
     char* buf;
     getcwd(cwd, sizeof(cwd)); // construct working directory variable for readline prompt
-    char* username = getenv("USER"); // construct username variable for readline prompt
+    
+    uid_t uid = geteuid();
+    struct passwd *pw = getpwuid(uid);
+    char* username;
+    if(pw != NULL)
+        username = pw->pw_name;
+    else
+    	username = "";
+
     int promptSize = 2048; 
     char prompt[promptSize];
     
