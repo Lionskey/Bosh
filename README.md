@@ -6,7 +6,7 @@ Welcome to the Bosh project! A minimal Bash-like shell for GNU/Linux operating s
 
 ## Feature set
 1. SIGINT handling
-2. Command pipes (|)
+2. Command pipes (For the most part)
 3. Whitespace parsing
 4. Command history
 5. Tab completion
